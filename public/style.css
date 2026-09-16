@@ -339,15 +339,17 @@ header .subtitle {
 }
 
 .event .event-details-link {
-  display: none;
+  display: block;
   font-size: 9px;
   color: var(--green-dark);
   text-decoration: underline;
   cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
 }
 
 .event:hover .event-details-link {
-  display: block;
+  opacity: 1;
 }
 
 .details-popup {
