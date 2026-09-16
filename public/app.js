@@ -268,7 +268,21 @@ function handleEventClick(eventType, e) {
 }
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Shift') shiftHeld = true;
+  if (e.key === 'Shift') {
+    shiftHeld = true;
+    if (activeFilter && !pendingSelection) {
+      pendingSelection = new Set(activeFilter instanceof Set ? activeFilter : [activeFilter]);
+      document.querySelectorAll('.event').forEach(el => {
+        el.classList.remove('filtered-out');
+        if (!pendingSelection.has(el.dataset.eventType)) {
+          el.classList.remove('highlighted');
+        }
+      });
+      const names = [...pendingSelection];
+      document.getElementById('filter-label').innerHTML =
+        `Selecting <strong>${names.join(', ')}</strong> (release Shift to apply)`;
+    }
+  }
 });
 
 document.addEventListener('keyup', (e) => {
