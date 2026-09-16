@@ -393,15 +393,6 @@ async function generatePDF() {
     doc.setFillColor(245, 245, 245);
     doc.rect(margin, calTop, contentW, headerH, 'F');
 
-    // --- Today highlight in header ---
-    const today = new Date().toISOString().slice(0, 10);
-    scheduleData.days.forEach((day, i) => {
-      if (day.fullDate === today) {
-        doc.setFillColor(232, 245, 224);
-        doc.rect(gridLeft + i * dayW, calTop, dayW, headerH, 'F');
-      }
-    });
-
     // --- Day header text ---
     scheduleData.days.forEach((day, i) => {
       const centerX = gridLeft + i * dayW + dayW / 2;
@@ -420,14 +411,6 @@ async function generatePDF() {
     doc.setDrawColor(...GREEN_MID);
     doc.setLineWidth(0.02);
     doc.line(margin, gridTop, gridRight, gridTop);
-
-    // --- Today highlight in grid ---
-    scheduleData.days.forEach((day, i) => {
-      if (day.fullDate === today) {
-        doc.setFillColor(250, 253, 248);
-        doc.rect(gridLeft + i * dayW, gridTop, dayW, gridH, 'F');
-      }
-    });
 
     // --- Hour gridlines ---
     doc.setDrawColor(...GRID);
