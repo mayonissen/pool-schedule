@@ -424,7 +424,7 @@ async function generatePDF() {
     // --- Today highlight in grid ---
     scheduleData.days.forEach((day, i) => {
       if (day.fullDate === today) {
-        doc.setFillColor(136, 198, 89, 10);
+        doc.setFillColor(250, 253, 248);
         doc.rect(gridLeft + i * dayW, gridTop, dayW, gridH, 'F');
       }
     });
