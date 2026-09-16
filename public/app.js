@@ -23,6 +23,8 @@ function isClosed(name) { return CLOSED_NAMES.some(n => n.toLowerCase() === name
 
 let scheduleData = null;
 let activeFilter = null;
+let shiftHeld = false;
+let pendingSelection = null;
 
 function minutesFromStart(hours, minutes) {
   return (hours - START_HOUR) * 60 + minutes;
@@ -111,12 +113,13 @@ function renderCalendar(data) {
       }
 
       if (!isClosed(ev.name)) {
-        el.addEventListener('click', () => setFilter(ev.name));
+        el.addEventListener('click', (e) => handleEventClick(ev.name, e));
+        el.addEventListener('mousedown', (e) => { if (e.shiftKey) e.preventDefault(); });
         el.addEventListener('mouseenter', () => {
           document.querySelectorAll('.event:not(.event-closed)').forEach(m => {
             if (m.dataset.eventType === ev.name) {
               m.classList.add('hover-match');
-            } else {
+            } else if (!(pendingSelection && pendingSelection.has(m.dataset.eventType))) {
               m.classList.add('hover-dim');
             }
           });
@@ -184,7 +187,7 @@ function addStartLines(data, hourHeight, filter) {
   const startMinutes = new Set();
   data.days.forEach(day => {
     day.events.forEach(ev => {
-      if (filter && ev.name !== filter) return;
+      if (filter && !matchesFilter(ev.name, filter)) return;
       const min = minutesFromStart(ev.startHour, ev.startMinute);
       if (min >= 0) startMinutes.add(min);
     });
@@ -207,7 +210,7 @@ function updateTimeLabels(hourHeight, filter) {
   const startTimes = new Map();
   scheduleData.days.forEach(day => {
     day.events.forEach(ev => {
-      if (filter && ev.name !== filter) return;
+      if (filter && !matchesFilter(ev.name, filter)) return;
       const min = minutesFromStart(ev.startHour, ev.startMinute);
       if (min >= 0 && !startTimes.has(min)) {
         startTimes.set(min, { hours: ev.startHour, minutes: ev.startMinute });
@@ -236,13 +239,80 @@ function getHourHeight() {
     .getPropertyValue('--hour-height'));
 }
 
+function handleEventClick(eventType, e) {
+  if (e.shiftKey) {
+    e.preventDefault();
+    if (!pendingSelection) {
+      pendingSelection = new Set(activeFilter instanceof Set ? activeFilter : (activeFilter ? [activeFilter] : []));
+    }
+    if (pendingSelection.has(eventType)) {
+      pendingSelection.delete(eventType);
+    } else {
+      pendingSelection.add(eventType);
+    }
+    document.querySelectorAll('.event').forEach(el => {
+      if (pendingSelection.has(el.dataset.eventType)) {
+        el.classList.add('highlighted');
+        el.classList.remove('filtered-out');
+      } else {
+        el.classList.remove('highlighted', 'filtered-out');
+      }
+    });
+    const names = [...pendingSelection];
+    document.getElementById('filter-label').innerHTML = names.length
+      ? `Selecting <strong>${names.join(', ')}</strong> (release Shift to apply)`
+      : 'Showing <strong>All Events</strong>';
+    return;
+  }
+  setFilter(new Set([eventType]));
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Shift') {
+    shiftHeld = true;
+    if (activeFilter && !pendingSelection) {
+      pendingSelection = new Set(activeFilter instanceof Set ? activeFilter : [activeFilter]);
+      document.querySelectorAll('.event').forEach(el => {
+        el.classList.remove('filtered-out');
+        if (!pendingSelection.has(el.dataset.eventType)) {
+          el.classList.remove('highlighted');
+        }
+      });
+      const names = [...pendingSelection];
+      document.getElementById('filter-label').innerHTML =
+        `Selecting <strong>${names.join(', ')}</strong> (release Shift to apply)`;
+    }
+  }
+});
+
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'Shift') {
+    shiftHeld = false;
+    if (pendingSelection) {
+      if (pendingSelection.size === 0) {
+        clearFilter();
+      } else {
+        setFilter(pendingSelection);
+      }
+      pendingSelection = null;
+    }
+  }
+});
+
+function matchesFilter(name, filter) {
+  if (!filter) return true;
+  if (filter instanceof Set) return filter.has(name);
+  return name === filter;
+}
+
 function setFilter(eventType) {
   activeFilter = eventType;
+  const names = eventType instanceof Set ? [...eventType] : [eventType];
   document.getElementById('filter-label').innerHTML =
-    `Showing <strong>${eventType}</strong>`;
+    `Showing <strong>${names.join(', ')}</strong>`;
 
   document.querySelectorAll('.event').forEach(el => {
-    if (el.dataset.eventType === eventType) {
+    if (matchesFilter(el.dataset.eventType, eventType)) {
       el.classList.remove('filtered-out');
       el.classList.add('highlighted');
     } else {
@@ -277,7 +347,7 @@ function getVisibleEvents() {
   const events = [];
   scheduleData.days.forEach(day => {
     day.events.forEach(ev => {
-      if (activeFilter && ev.name !== activeFilter) return;
+      if (activeFilter && !matchesFilter(ev.name, activeFilter)) return;
       events.push({ ...ev, fullDate: day.fullDate, dayName: day.dayName });
     });
   });
@@ -337,7 +407,9 @@ function generateICS() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  const label = activeFilter ? activeFilter.toLowerCase().replace(/\s+/g, '-') : 'all';
+  const label = activeFilter
+    ? (activeFilter instanceof Set ? [...activeFilter] : [activeFilter]).map(s => s.toLowerCase().replace(/\s+/g, '-')).join('+')
+    : 'all';
   a.download = `pool-schedule-${label}.ics`;
   document.body.appendChild(a);
   a.click();
@@ -443,7 +515,7 @@ async function generatePDF() {
     // --- Events ---
     scheduleData.days.forEach((day, i) => {
       day.events.forEach(ev => {
-        if (activeFilter && ev.name !== activeFilter) return;
+        if (activeFilter && !matchesFilter(ev.name, activeFilter)) return;
 
         const startMin = minutesFromStart(ev.startHour, ev.startMinute);
         const endMin = minutesFromStart(ev.endHour, ev.endMinute);
