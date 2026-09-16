@@ -28,6 +28,13 @@ header {
   padding: 16px 24px;
 }
 
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 header h1 {
   font-size: 22px;
   font-weight: 600;
@@ -39,16 +46,37 @@ header .subtitle {
   margin-top: 2px;
 }
 
-header .subtitle a {
-  color: var(--green-bright);
+.parks-link {
+  color: #fff;
+  text-decoration: none;
 }
 
-.notice-flag {
-  margin-left: 6px;
-  cursor: help;
+.parks-link:hover {
+  color: var(--green-bright);
+  text-decoration: underline;
+}
+
+#pool-select {
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
   font-size: 14px;
-  vertical-align: middle;
-  opacity: 0.9;
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 200px;
+}
+
+#pool-select:focus {
+  outline: 2px solid var(--green-bright);
+  outline-offset: 1px;
+}
+
+#pool-select option,
+#pool-select optgroup {
+  background: var(--green-dark);
+  color: #fff;
 }
 
 #toolbar {
@@ -107,6 +135,22 @@ header .subtitle a {
   padding: 40px 24px;
   color: #c62828;
   font-size: 15px;
+}
+
+#closed-notice {
+  text-align: center;
+  padding: 80px 24px;
+  color: var(--text);
+}
+
+.closed-heading {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+#closed-notice a {
+  color: var(--green-mid);
 }
 
 /* Calendar */
@@ -280,6 +324,10 @@ header .subtitle a {
   box-shadow: inset 0 0 0 2px var(--green-dark);
 }
 
+.event.highlighted .event-name {
+  font-weight: 800;
+}
+
 .event .event-name {
   font-weight: 600;
   display: block;
@@ -293,10 +341,6 @@ header .subtitle a {
 .event.filtered-out {
   opacity: 0.08;
   pointer-events: none;
-}
-
-.event.highlighted .event-name {
-  font-weight: 800;
 }
 
 .day-notice {
@@ -346,7 +390,8 @@ footer a {
 
   header h1 { font-size: 14px; color: #fff; }
   header .subtitle { font-size: 9px; }
-  header .subtitle a, .notice-flag { display: none; }
+  header .subtitle a { display: none; }
+  #pool-select { display: none; }
 
   #toolbar { display: none; }
 

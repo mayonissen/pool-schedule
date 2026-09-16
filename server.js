@@ -4,8 +4,6 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const SCHEDULE_URL = 'https://www.nycgovparks.org/facilities/recreationcenters/B250/schedule';
-
 app.use(express.static(path.join(__dirname, 'public')));
 
 function parseTime(str) {
@@ -58,9 +56,17 @@ function parseScheduleHtml(html) {
     }
   });
 
+  const centerName = $('h1').first().text().trim() || 'Pool Schedule';
+
+  function isClosed() {
+    return generalNotices.some(n =>
+      /closed/i.test(n.title) || /closed/i.test(n.text)
+    );
+  }
+
   const poolDiv = $('#Pool-schedule');
   if (!poolDiv.length) {
-    return { days: [], notices: generalNotices, centerName: 'Pool Schedule' };
+    return { days: [], notices: generalNotices, centerName, closed: isClosed() };
   }
 
   const nextLink = poolDiv.find('.pager .next a').attr('href') || '';
@@ -142,22 +148,32 @@ function parseScheduleHtml(html) {
     });
   });
 
-  const centerName = $('h1').first().text().trim() || 'Pool Schedule';
+  const totalEvents = days.reduce((sum, d) => sum + d.events.length, 0);
 
-  return { days, notices: generalNotices, centerName };
+  return { days, notices: generalNotices, centerName, closed: totalEvents === 0 && isClosed() };
 }
 
 app.get('/api/schedule', async (req, res) => {
+  const facilityCode = req.query.facility || 'B250';
+  if (!/^[A-Z]{1,2}\d{1,4}(-[A-Z0-9]+)?$/.test(facilityCode)) {
+    return res.status(400).json({ error: 'Invalid facility code' });
+  }
+  const scheduleUrl = `https://www.nycgovparks.org/facilities/recreationcenters/${facilityCode}/schedule`;
   try {
-    const response = await fetch(SCHEDULE_URL, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
-    });
-    if (!response.ok) {
-      throw new Error(`NYC Parks returned ${response.status}`);
+    let html = '';
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const response = await fetch(scheduleUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+      });
+      html = await response.text();
+      if (response.ok && html.length > 0) break;
+      if (attempt < 2) await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
     }
-    const html = await response.text();
+    if (!html) {
+      throw new Error('NYC Parks returned empty response');
+    }
     const schedule = parseScheduleHtml(html);
     res.json(schedule);
   } catch (err) {
