@@ -2,22 +2,8 @@ const START_HOUR = 6;
 const END_HOUR = 22;
 const TOTAL_HOURS = END_HOUR - START_HOUR;
 
-const EVENT_STYLES = {
-  'Adult Lap Swim':     { bg: '#dbeafe', border: '#3b82f6', text: '#1e3a5f' },
-  'Open Lap Swim':      { bg: '#d1fae5', border: '#10b981', text: '#064e3b' },
-  'General Swim':       { bg: '#e0f2e9', border: '#4caf50', text: '#1b5e20' },
-  'Family Swim':        { bg: '#fef3c7', border: '#f59e0b', text: '#78350f' },
-  'Closed for Cleaning':{ bg: '#f3f4f6', border: '#9ca3af', text: '#6b7280' },
-};
-
-const DEFAULT_STYLE = { bg: '#ede9fe', border: '#8b5cf6', text: '#4c1d95' };
-
 let scheduleData = null;
 let activeFilter = null;
-
-function getEventStyle(name) {
-  return EVENT_STYLES[name] || DEFAULT_STYLE;
-}
 
 function minutesFromStart(hours, minutes) {
   return (hours - START_HOUR) * 60 + minutes;
@@ -86,15 +72,12 @@ function renderCalendar(data) {
       const topPx = (topMin / 60) * hourHeight;
       const heightPx = (duration / 60) * hourHeight;
 
-      const style = getEventStyle(ev.name);
       const el = document.createElement('div');
       el.className = 'event';
+      if (ev.name === 'Closed for Cleaning') el.classList.add('event-closed');
       el.dataset.eventType = ev.name;
       el.style.top = `${topPx}px`;
       el.style.height = `${heightPx}px`;
-      el.style.backgroundColor = style.bg;
-      el.style.borderColor = style.border;
-      el.style.color = style.text;
 
       const nameSpan = document.createElement('span');
       nameSpan.className = 'event-name';
@@ -108,7 +91,23 @@ function renderCalendar(data) {
         el.appendChild(timeSpan);
       }
 
-      el.addEventListener('click', () => setFilter(ev.name));
+      if (ev.name !== 'Closed for Cleaning') {
+        el.addEventListener('click', () => setFilter(ev.name));
+        el.addEventListener('mouseenter', () => {
+          document.querySelectorAll('.event:not(.event-closed)').forEach(m => {
+            if (m.dataset.eventType === ev.name) {
+              m.classList.add('hover-match');
+            } else {
+              m.classList.add('hover-dim');
+            }
+          });
+        });
+        el.addEventListener('mouseleave', () => {
+          document.querySelectorAll('.event').forEach(m => {
+            m.classList.remove('hover-match', 'hover-dim');
+          });
+        });
+      }
       col.appendChild(el);
     });
 
