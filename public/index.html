@@ -3,17 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pool Schedule — Shirley Chisholm Recreation Center</title>
+  <title>Pool Schedule</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
-    <h1 id="center-name">Pool Schedule</h1>
-    <p class="subtitle">
-      Shirley Chisholm Recreation Center &middot;
-      <a href="https://www.nycgovparks.org/facilities/recreationcenters/B250/schedule#Pool" target="_blank" rel="noopener">View on NYC Parks</a>
-      <span id="notice-flag" class="notice-flag" hidden title="There are notifications that may impact the schedule">&#9888;</span>
-    </p>
+    <div class="header-row">
+      <div class="header-left">
+        <h1 id="center-name">Pool Schedule</h1>
+        <p class="subtitle">
+          <a href="https://www.nycgovparks.org/facilities/recreationcenters" target="_blank" rel="noopener" class="parks-link">View schedule and any notices on NYC Parks website</a>
+        </p>
+      </div>
+      <div class="header-right">
+        <select id="pool-select" aria-label="Select a pool"></select>
+      </div>
+    </div>
   </header>
 
   <div id="toolbar">

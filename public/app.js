@@ -1,3 +1,39 @@
+const POOLS = [
+  { borough: 'Bronx', code: 'X998', name: 'Hunts Point Recreation Center' },
+  { borough: 'Bronx', code: 'X999', name: 'Kwame Ture Recreation Center' },
+  { borough: 'Bronx', code: 'X016', name: 'Owen Dolen Recreation Center' },
+  { borough: 'Bronx', code: 'X044', name: 'St. James Recreation Center' },
+  { borough: 'Bronx', code: 'X045', name: "St. Mary's Recreation Center" },
+  { borough: 'Bronx', code: 'X104', name: 'Williamsbridge Oval Recreation Center' },
+  { borough: 'Brooklyn', code: 'B270', name: 'Brownsville Recreation Center' },
+  { borough: 'Brooklyn', code: 'B088', name: 'Herbert Von King Cultural Arts Center' },
+  { borough: 'Brooklyn', code: 'B058', name: 'McCarren Play Center' },
+  { borough: 'Brooklyn', code: 'B085', name: 'Metropolitan Recreation Center' },
+  { borough: 'Brooklyn', code: 'B126', name: 'Red Hook Recreation Center' },
+  { borough: 'Brooklyn', code: 'B250', name: 'Shirley Chisholm Recreation Center' },
+  { borough: 'Brooklyn', code: 'B245', name: "St. John's Recreation Center" },
+  { borough: 'Brooklyn', code: 'B087', name: 'Sunset Park Recreation Center' },
+  { borough: 'Manhattan', code: 'M194', name: 'Alfred E. Smith Recreation Center' },
+  { borough: 'Manhattan', code: 'M164', name: 'Asser Levy Recreation Center' },
+  { borough: 'Manhattan', code: 'M260', name: 'Chelsea Recreation Center' },
+  { borough: 'Manhattan', code: 'M130', name: 'Constance Baker Motley Recreation Center' },
+  { borough: 'Manhattan', code: 'M063', name: 'Gertrude Ederle Recreation Center' },
+  { borough: 'Manhattan', code: 'M033', name: 'Hamilton Fish Recreation Center' },
+  { borough: 'Manhattan', code: 'M131', name: 'Hansborough Recreation Center' },
+  { borough: 'Manhattan', code: 'M099', name: 'J. Hood Wright Recreation Center' },
+  { borough: 'Manhattan', code: 'M014', name: 'Jackie Robinson Recreation Center' },
+  { borough: 'Manhattan', code: 'M058', name: 'Pelham Fritz Recreation Center' },
+  { borough: 'Manhattan', code: 'M047', name: 'Thomas Jefferson Recreation Center' },
+  { borough: 'Manhattan', code: 'M103', name: 'Tony Dapolito Recreation Center' },
+  { borough: 'Queens', code: 'Q099', name: 'Flushing Meadows Corona Park Aquatics Center & Ice Rink' },
+  { borough: 'Queens', code: 'Q401', name: 'Lost Battalion Hall Recreation Center' },
+  { borough: 'Queens', code: 'Q448', name: 'Roy Wilkins Recreation Center' },
+  { borough: 'Queens', code: 'Q446', name: 'Sorrentino Recreation Center' },
+  { borough: 'Staten Island', code: 'R008', name: 'Faber Park Recreation Center' },
+  { borough: 'Staten Island', code: 'R129', name: 'Greenbelt Recreation Center' },
+  { borough: 'Staten Island', code: 'R149', name: 'Ocean Breeze Track & Field Athletic Complex' },
+];
+
 const START_HOUR = 6;
 const END_HOUR = 22;
 const TOTAL_HOURS = END_HOUR - START_HOUR;
@@ -119,11 +155,44 @@ function renderCalendar(data) {
   updateTimeLabels(hourHeight, null);
 }
 
-function renderNoticeFlag(notices) {
-  const flag = document.getElementById('notice-flag');
-  if (notices && notices.length > 0) {
-    flag.hidden = false;
+function populatePoolSelect() {
+  const select = document.getElementById('pool-select');
+  const boroughs = [...new Set(POOLS.map(p => p.borough))];
+  boroughs.forEach(borough => {
+    const group = document.createElement('optgroup');
+    group.label = borough;
+    POOLS.filter(p => p.borough === borough).forEach(pool => {
+      const opt = document.createElement('option');
+      opt.value = pool.code;
+      opt.textContent = pool.name;
+      group.appendChild(opt);
+    });
+    select.appendChild(group);
+  });
+
+  const saved = localStorage.getItem('selectedPool');
+  const params = new URLSearchParams(window.location.search);
+  const fromUrl = params.get('facility');
+  const code = fromUrl || saved || 'B250';
+  if (POOLS.some(p => p.code === code)) {
+    select.value = code;
   }
+
+  select.addEventListener('change', () => {
+    const code = select.value;
+    localStorage.setItem('selectedPool', code);
+    const url = new URL(window.location);
+    url.searchParams.set('facility', code);
+    window.history.replaceState(null, '', url);
+    loadSchedule(code);
+  });
+
+  return select.value;
+}
+
+function updateParksLink(code) {
+  const link = document.querySelector('.parks-link');
+  link.href = `https://www.nycgovparks.org/facilities/recreationcenters/${code}/schedule#Pool`;
 }
 
 function addStartLines(data, hourHeight, filter) {
@@ -214,9 +283,11 @@ function clearFilter() {
     el.classList.remove('filtered-out', 'highlighted');
   });
 
-  const hh = getHourHeight();
-  addStartLines(scheduleData, hh, null);
-  updateTimeLabels(hh, null);
+  if (scheduleData) {
+    const hh = getHourHeight();
+    addStartLines(scheduleData, hh, null);
+    updateTimeLabels(hh, null);
+  }
 }
 
 function getVisibleEvents() {
@@ -299,9 +370,15 @@ document.getElementById('btn-reset').addEventListener('click', (e) => {
   clearFilter();
 });
 
-async function init() {
+async function loadSchedule(facilityCode) {
+  document.getElementById('loading').hidden = false;
+  document.getElementById('calendar').hidden = true;
+  document.getElementById('error').hidden = true;
+  clearFilter();
+  updateParksLink(facilityCode);
+
   try {
-    const resp = await fetch('/api/schedule');
+    const resp = await fetch(`/api/schedule?facility=${facilityCode}`);
     if (!resp.ok) throw new Error('Failed to load schedule');
     scheduleData = await resp.json();
 
@@ -310,13 +387,11 @@ async function init() {
     document.getElementById('loading').hidden = true;
     document.getElementById('calendar').hidden = false;
 
-    if (scheduleData.centerName) {
-      document.getElementById('center-name').textContent =
-        scheduleData.centerName + ' — Pool Schedule';
-      document.title = scheduleData.centerName + ' — Pool Schedule';
-    }
+    const pool = POOLS.find(p => p.code === facilityCode);
+    const displayName = pool ? pool.name : (scheduleData.centerName || 'Pool Schedule');
+    document.getElementById('center-name').textContent = displayName + ' — Pool Schedule';
+    document.title = displayName + ' — Pool Schedule';
 
-    renderNoticeFlag(scheduleData.notices || []);
     renderCalendar(scheduleData);
   } catch (err) {
     document.getElementById('loading').hidden = true;
@@ -326,4 +401,5 @@ async function init() {
   }
 }
 
-init();
+const initialCode = populatePoolSelect();
+loadSchedule(initialCode);
