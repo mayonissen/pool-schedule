@@ -85,6 +85,18 @@ function parseScheduleHtml(html) {
     headers.push({ dayName: parts[0] || '', date: parts[1] || '' });
   });
 
+  const programDetails = {};
+  $('[id^="program_"]').each((_, el) => {
+    const $el = $(el);
+    const id = $el.attr('id');
+    const lines = [];
+    $el.find('p').each((_, p) => {
+      const text = $(p).text().trim();
+      if (text) lines.push(text);
+    });
+    programDetails[id] = lines;
+  });
+
   const days = [];
   poolDiv.find('table.schedule-table tbody tr td').each((i, el) => {
     if (i >= headers.length) return;
@@ -115,6 +127,9 @@ function parseScheduleHtml(html) {
       const timeMatch = fullText.match(/(\d{1,2}:\d{2}\s*[ap])\s*-\s*(\d{1,2}:\d{2}\s*[ap])/i);
       const name = $prog.find('strong').text().trim();
       const room = $prog.find('.room').text().trim();
+      const popupHref = $prog.find('a.program-popup').attr('href') || '';
+      const popupId = popupHref.replace('#', '');
+      const details = programDetails[popupId] || [];
 
       if (timeMatch && name) {
         const start = parseTime(timeMatch[1]);
@@ -127,7 +142,8 @@ function parseScheduleHtml(html) {
           startMinute: start ? start.minutes : 0,
           endHour: end ? end.hours : 0,
           endMinute: end ? end.minutes : 0,
-          room
+          room,
+          details
         });
       }
     });

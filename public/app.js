@@ -112,6 +112,19 @@ function renderCalendar(data) {
         el.appendChild(timeSpan);
       }
 
+      if (!isClosed(ev.name) && ev.details && ev.details.length) {
+        const detailsLink = document.createElement('a');
+        detailsLink.className = 'event-details-link';
+        detailsLink.textContent = 'Details';
+        detailsLink.href = '#';
+        detailsLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          showDetailsPopup(ev.name, ev.details, e);
+        });
+        el.appendChild(detailsLink);
+      }
+
       if (!isClosed(ev.name)) {
         el.addEventListener('click', (e) => handleEventClick(ev.name, e));
         el.addEventListener('mousedown', (e) => { if (e.shiftKey) e.preventDefault(); });
@@ -232,6 +245,39 @@ function updateTimeLabels(hourHeight, filter) {
     timeCol.appendChild(label);
     lastPx = topPx;
   });
+}
+
+function showDetailsPopup(name, details, e) {
+  document.querySelectorAll('.details-popup').forEach(el => el.remove());
+
+  const popup = document.createElement('div');
+  popup.className = 'details-popup';
+
+  const close = document.createElement('button');
+  close.className = 'details-popup-close';
+  close.textContent = '×';
+  close.addEventListener('click', () => popup.remove());
+  popup.appendChild(close);
+
+  const title = document.createElement('h3');
+  title.textContent = name;
+  popup.appendChild(title);
+
+  details.forEach(line => {
+    const p = document.createElement('p');
+    p.textContent = line;
+    popup.appendChild(p);
+  });
+
+  document.body.appendChild(popup);
+
+  const rect = popup.getBoundingClientRect();
+  let left = e.clientX + 8;
+  let top = e.clientY + 8;
+  if (left + rect.width > window.innerWidth - 16) left = e.clientX - rect.width - 8;
+  if (top + rect.height > window.innerHeight - 16) top = e.clientY - rect.height - 8;
+  popup.style.left = `${left}px`;
+  popup.style.top = `${top}px`;
 }
 
 function getHourHeight() {
