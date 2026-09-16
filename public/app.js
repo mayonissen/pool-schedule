@@ -3,14 +3,14 @@ const END_HOUR = 22;
 const TOTAL_HOURS = END_HOUR - START_HOUR;
 
 const EVENT_STYLES = {
-  'Adult Lap Swim':     { bg: '#dbeafe', border: '#3b82f6', text: '#1e3a5f' },
-  'Open Lap Swim':      { bg: '#d1fae5', border: '#10b981', text: '#064e3b' },
-  'General Swim':       { bg: '#e0f2e9', border: '#4caf50', text: '#1b5e20' },
-  'Family Swim':        { bg: '#fef3c7', border: '#f59e0b', text: '#78350f' },
-  'Closed for Cleaning':{ bg: '#f3f4f6', border: '#9ca3af', text: '#6b7280' },
+  'Adult Lap Swim':     { bg: '#c4ddf0', border: '#268bd2', text: '#073642' },
+  'Open Lap Swim':      { bg: '#bee5e0', border: '#2aa198', text: '#073642' },
+  'General Swim':       { bg: '#dce4b8', border: '#859900', text: '#073642' },
+  'Family Swim':        { bg: '#eadcab', border: '#b58900', text: '#073642' },
+  'Closed for Cleaning':{ bg: '#dfe1e1', border: '#93a1a1', text: '#586e75' },
 };
 
-const DEFAULT_STYLE = { bg: '#ede9fe', border: '#8b5cf6', text: '#4c1d95' };
+const DEFAULT_STYLE = { bg: '#d5d6e8', border: '#6c71c4', text: '#073642' };
 
 let scheduleData = null;
 let activeFilter = null;
