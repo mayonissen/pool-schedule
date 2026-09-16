@@ -137,6 +137,22 @@ header .subtitle {
   font-size: 15px;
 }
 
+#closed-notice {
+  text-align: center;
+  padding: 80px 24px;
+  color: var(--text);
+}
+
+.closed-heading {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+#closed-notice a {
+  color: var(--green-mid);
+}
+
 /* Calendar */
 
 #calendar {

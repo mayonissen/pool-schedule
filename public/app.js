@@ -356,6 +356,8 @@ async function loadSchedule(facilityCode) {
   document.getElementById('loading').hidden = false;
   document.getElementById('calendar').hidden = true;
   document.getElementById('error').hidden = true;
+  document.getElementById('closed-notice').hidden = true;
+  document.getElementById('toolbar').hidden = false;
   clearFilter();
   updateParksLink(facilityCode);
 
@@ -367,14 +369,22 @@ async function loadSchedule(facilityCode) {
     if (scheduleData.error) throw new Error(scheduleData.error);
 
     document.getElementById('loading').hidden = true;
-    document.getElementById('calendar').hidden = false;
 
     const pool = POOLS.find(p => p.code === facilityCode);
     const displayName = pool ? pool.name : (scheduleData.centerName || 'Pool Schedule');
     document.getElementById('center-name').textContent = displayName + ' — Pool Schedule';
     document.title = displayName + ' — Pool Schedule';
 
-    renderCalendar(scheduleData);
+    if (scheduleData.closed) {
+      document.getElementById('toolbar').hidden = true;
+      const notice = document.getElementById('closed-notice');
+      notice.hidden = false;
+      document.getElementById('closed-link').href =
+        `https://www.nycgovparks.org/facilities/recreationcenters/${facilityCode}/schedule`;
+    } else {
+      document.getElementById('calendar').hidden = false;
+      renderCalendar(scheduleData);
+    }
   } catch (err) {
     document.getElementById('loading').hidden = true;
     const errorEl = document.getElementById('error');

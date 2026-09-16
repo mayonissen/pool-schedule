@@ -56,9 +56,17 @@ function parseScheduleHtml(html) {
     }
   });
 
+  const centerName = $('h1').first().text().trim() || 'Pool Schedule';
+
+  function isClosed() {
+    return generalNotices.some(n =>
+      /closed/i.test(n.title) || /closed/i.test(n.text)
+    );
+  }
+
   const poolDiv = $('#Pool-schedule');
   if (!poolDiv.length) {
-    return { days: [], notices: generalNotices, centerName: 'Pool Schedule' };
+    return { days: [], notices: generalNotices, centerName, closed: isClosed() };
   }
 
   const nextLink = poolDiv.find('.pager .next a').attr('href') || '';
@@ -140,9 +148,9 @@ function parseScheduleHtml(html) {
     });
   });
 
-  const centerName = $('h1').first().text().trim() || 'Pool Schedule';
+  const totalEvents = days.reduce((sum, d) => sum + d.events.length, 0);
 
-  return { days, notices: generalNotices, centerName };
+  return { days, notices: generalNotices, centerName, closed: totalEvents === 0 && isClosed() };
 }
 
 app.get('/api/schedule', async (req, res) => {
