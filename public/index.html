@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pool Schedule — Shirley Chisholm Recreation Center</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1 id="center-name">Pool Schedule</h1>
+    <p class="subtitle">
+      Shirley Chisholm Recreation Center &middot;
+      <a href="https://www.nycgovparks.org/facilities/recreationcenters/B250/schedule#Pool" target="_blank" rel="noopener">View on NYC Parks</a>
+      <span id="notice-flag" class="notice-flag" hidden title="There are notifications that may impact the schedule">&#9888;</span>
+    </p>
+  </header>
+
+  <div id="toolbar">
+    <span id="filter-label">Showing <strong>All Events</strong></span>
+    <div id="toolbar-actions">
+      <button id="btn-pdf" class="btn">Save PDF</button>
+      <button id="btn-ics" class="btn">Download ICS</button>
+      <a href="#" id="btn-reset">Reset</a>
+    </div>
+  </div>
+
+  <div id="loading">Loading schedule&hellip;</div>
+  <div id="error" hidden></div>
+
+  <div id="calendar" hidden>
+    <div class="calendar-header">
+      <div class="time-gutter"></div>
+      <div class="day-headers" id="day-headers"></div>
+    </div>
+    <div class="calendar-body">
+      <div class="time-column" id="time-column"></div>
+      <div class="days-container" id="days-container"></div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Data from <a href="https://www.nycgovparks.org" target="_blank" rel="noopener">NYC Parks</a>. This is an unofficial tool.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
