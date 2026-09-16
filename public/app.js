@@ -345,7 +345,176 @@ function generateICS() {
   URL.revokeObjectURL(url);
 }
 
-document.getElementById('btn-pdf').addEventListener('click', () => window.print());
+async function generatePDF() {
+  if (!scheduleData || scheduleData.days.length === 0) return;
+
+  const btn = document.getElementById('btn-pdf');
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const margin = 0.5;
+    const pageW = 11;
+    const pageH = 8.5;
+    const contentW = pageW - 2 * margin;
+    const contentH = pageH - 2 * margin;
+
+    const doc = new jsPDF({ unit: 'in', format: 'letter', orientation: 'landscape' });
+
+    const GREEN_DARK = [52, 84, 29];
+    const GREEN_MID = [99, 144, 65];
+    const TEXT_LIGHT = [112, 112, 112];
+    const BORDER = [221, 221, 221];
+    const GRID = [238, 238, 238];
+    const CLOSED_TEXT = [107, 114, 128];
+
+    // --- Title ---
+    const title = document.getElementById('center-name').textContent.replace(/—/g, '-');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(...GREEN_DARK);
+    doc.text(title, margin, margin + 0.18);
+
+    // --- Layout ---
+    const calTop = margin + 0.35;
+    const gutterW = 0.55;
+    const headerH = 0.4;
+    const numDays = scheduleData.days.length;
+    const dayW = (contentW - gutterW) / numDays;
+    const gridTop = calTop + headerH;
+    const gridLeft = margin + gutterW;
+    const gridH = contentH - (calTop - margin) - headerH;
+    const hourH = gridH / TOTAL_HOURS;
+    const gridBottom = gridTop + gridH;
+    const gridRight = margin + contentW;
+
+    // --- Day header background ---
+    doc.setFillColor(245, 245, 245);
+    doc.rect(margin, calTop, contentW, headerH, 'F');
+
+    // --- Today highlight in header ---
+    const today = new Date().toISOString().slice(0, 10);
+    scheduleData.days.forEach((day, i) => {
+      if (day.fullDate === today) {
+        doc.setFillColor(232, 245, 224);
+        doc.rect(gridLeft + i * dayW, calTop, dayW, headerH, 'F');
+      }
+    });
+
+    // --- Day header text ---
+    scheduleData.days.forEach((day, i) => {
+      const centerX = gridLeft + i * dayW + dayW / 2;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(...GREEN_DARK);
+      doc.text(day.dayName, centerX, calTop + 0.17, { align: 'center' });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...TEXT_LIGHT);
+      doc.text(day.date, centerX, calTop + 0.3, { align: 'center' });
+    });
+
+    // --- Header bottom accent ---
+    doc.setDrawColor(...GREEN_MID);
+    doc.setLineWidth(0.02);
+    doc.line(margin, gridTop, gridRight, gridTop);
+
+    // --- Today highlight in grid ---
+    scheduleData.days.forEach((day, i) => {
+      if (day.fullDate === today) {
+        doc.setFillColor(136, 198, 89, 10);
+        doc.rect(gridLeft + i * dayW, gridTop, dayW, gridH, 'F');
+      }
+    });
+
+    // --- Hour gridlines ---
+    doc.setDrawColor(...GRID);
+    doc.setLineWidth(0.003);
+    for (let h = 1; h < TOTAL_HOURS; h++) {
+      const y = gridTop + h * hourH;
+      doc.line(gridLeft, y, gridRight, y);
+    }
+
+    // --- Column dividers ---
+    doc.setDrawColor(...BORDER);
+    doc.setLineWidth(0.005);
+    doc.line(gridLeft, calTop, gridLeft, gridBottom);
+    for (let i = 1; i < numDays; i++) {
+      const x = gridLeft + i * dayW;
+      doc.line(x, calTop, x, gridBottom);
+    }
+
+    // --- Time labels ---
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...TEXT_LIGHT);
+    for (let h = 0; h < TOTAL_HOURS; h++) {
+      const hour = START_HOUR + h;
+      const label = formatTimeShort(hour, 0);
+      const y = gridTop + h * hourH + 0.08;
+      doc.text(label, gridLeft - 0.06, y, { align: 'right' });
+    }
+
+    // --- Events ---
+    scheduleData.days.forEach((day, i) => {
+      day.events.forEach(ev => {
+        if (activeFilter && ev.name !== activeFilter) return;
+
+        const startMin = minutesFromStart(ev.startHour, ev.startMinute);
+        const endMin = minutesFromStart(ev.endHour, ev.endMinute);
+        const duration = endMin - startMin;
+        if (startMin < 0 || duration <= 0) return;
+
+        const x = gridLeft + i * dayW + 0.03;
+        const w = dayW - 0.06;
+        const y = gridTop + (startMin / 60) * hourH + 0.008;
+        const h = (duration / 60) * hourH - 0.016;
+        const closed = isClosed(ev.name);
+
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(closed ? 255 : GREEN_DARK[0], closed ? 255 : GREEN_DARK[1], closed ? 255 : GREEN_DARK[2]);
+        doc.setLineWidth(closed ? 0.003 : 0.014);
+        doc.roundedRect(x, y, w, h, 0.02, 0.02, 'FD');
+
+        doc.setTextColor(closed ? CLOSED_TEXT[0] : GREEN_DARK[0], closed ? CLOSED_TEXT[1] : GREEN_DARK[1], closed ? CLOSED_TEXT[2] : GREEN_DARK[2]);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6);
+
+        let name = ev.name;
+        const maxW = w - 0.06;
+        while (doc.getTextWidth(name) > maxW && name.length > 3) {
+          name = name.slice(0, -1);
+        }
+        if (name !== ev.name) name += '...';
+        doc.text(name, x + 0.03, y + 0.09);
+
+        if (h > 0.2) {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(5.5);
+          const timeStr = formatTimeShort(ev.startHour, ev.startMinute) + '-' + formatTimeShort(ev.endHour, ev.endMinute);
+          doc.text(timeStr, x + 0.03, y + 0.18);
+        }
+      });
+    });
+
+    // --- Outer border ---
+    doc.setDrawColor(...BORDER);
+    doc.setLineWidth(0.01);
+    doc.rect(margin, calTop, contentW, headerH + gridH);
+
+    // --- Save ---
+    const pool = POOLS.find(p => p.code === document.getElementById('pool-select').value);
+    const filename = pool ? pool.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'pool-schedule';
+    doc.save(filename + '-schedule.pdf');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save PDF';
+  }
+}
+
+document.getElementById('btn-pdf').addEventListener('click', generatePDF);
 document.getElementById('btn-ics').addEventListener('click', generateICS);
 document.getElementById('btn-reset').addEventListener('click', (e) => {
   e.preventDefault();
