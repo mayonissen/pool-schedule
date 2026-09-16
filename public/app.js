@@ -2,6 +2,9 @@ const START_HOUR = 6;
 const END_HOUR = 22;
 const TOTAL_HOURS = END_HOUR - START_HOUR;
 
+const CLOSED_NAMES = ['Closed for Cleaning', 'Pool closed for cleaning'];
+function isClosed(name) { return CLOSED_NAMES.some(n => n.toLowerCase() === name.toLowerCase()); }
+
 let scheduleData = null;
 let activeFilter = null;
 
@@ -74,7 +77,7 @@ function renderCalendar(data) {
 
       const el = document.createElement('div');
       el.className = 'event';
-      if (ev.name === 'Closed for Cleaning') el.classList.add('event-closed');
+      if (isClosed(ev.name)) el.classList.add('event-closed');
       el.dataset.eventType = ev.name;
       el.style.top = `${topPx}px`;
       el.style.height = `${heightPx}px`;
@@ -91,7 +94,7 @@ function renderCalendar(data) {
         el.appendChild(timeSpan);
       }
 
-      if (ev.name !== 'Closed for Cleaning') {
+      if (!isClosed(ev.name)) {
         el.addEventListener('click', () => setFilter(ev.name));
         el.addEventListener('mouseenter', () => {
           document.querySelectorAll('.event:not(.event-closed)').forEach(m => {

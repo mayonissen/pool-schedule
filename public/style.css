@@ -254,7 +254,7 @@ header .subtitle a {
   border: 2px solid var(--green-dark);
   background: #fff;
   color: var(--green-dark);
-  transition: opacity 0.2s, box-shadow 0.2s, border-color 0.2s;
+  transition: opacity 0.2s, box-shadow 0.2s, border-color 0.2s, color 0.2s;
   z-index: 1;
 }
 
@@ -267,6 +267,7 @@ header .subtitle a {
 
 .event.hover-dim {
   border-color: var(--green-bright);
+  color: var(--text-light);
 }
 
 .event:hover,
