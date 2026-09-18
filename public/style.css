@@ -121,6 +121,7 @@ header .subtitle {
   color: var(--text-light);
   text-decoration: underline;
   cursor: pointer;
+  margin-left: 8px;
 }
 
 #loading {
