@@ -307,7 +307,7 @@ function handleEventClick(eventType, e) {
     const names = [...pendingSelection];
     document.getElementById('filter-label').innerHTML = names.length
       ? `Selecting <strong>${names.join(', ')}</strong> (release Shift to apply)`
-      : 'Showing <strong>All Events</strong>';
+      : 'Showing <strong>all events</strong>';
     return;
   }
   setFilter(new Set([eventType]));
@@ -356,6 +356,7 @@ function setFilter(eventType) {
   const names = eventType instanceof Set ? [...eventType] : [eventType];
   document.getElementById('filter-label').innerHTML =
     `Showing <strong>${names.join(', ')}</strong>`;
+  document.getElementById('btn-reset').hidden = false;
 
   document.querySelectorAll('.event').forEach(el => {
     if (matchesFilter(el.dataset.eventType, eventType)) {
@@ -375,7 +376,8 @@ function setFilter(eventType) {
 function clearFilter() {
   activeFilter = null;
   document.getElementById('filter-label').innerHTML =
-    'Showing <strong>All Events</strong>';
+    'Showing <strong>all events</strong>';
+  document.getElementById('btn-reset').hidden = true;
 
   document.querySelectorAll('.event').forEach(el => {
     el.classList.remove('filtered-out', 'highlighted');
