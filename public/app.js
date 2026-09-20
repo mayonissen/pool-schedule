@@ -634,11 +634,30 @@ async function loadSchedule(facilityCode) {
   updateParksLink(facilityCode);
 
   try {
-    const resp = await fetch(`/api/schedule?facility=${facilityCode}`);
-    if (!resp.ok) throw new Error('Failed to load schedule');
-    scheduleData = await resp.json();
+    const today = new Date().toISOString().slice(0, 10);
+    const cacheKey = `schedule_${facilityCode}`;
+    let usedCache = false;
 
-    if (scheduleData.error) throw new Error(scheduleData.error);
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      if (raw) {
+        const entry = JSON.parse(raw);
+        if (entry.date === today && entry.data) {
+          scheduleData = entry.data;
+          usedCache = true;
+        }
+      }
+    } catch (_) {}
+
+    if (!usedCache) {
+      const resp = await fetch(`/api/schedule?facility=${facilityCode}`);
+      if (!resp.ok) throw new Error('Failed to load schedule');
+      scheduleData = await resp.json();
+      if (scheduleData.error) throw new Error(scheduleData.error);
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify({ date: today, data: scheduleData }));
+      } catch (_) {}
+    }
 
     document.getElementById('loading').hidden = true;
 

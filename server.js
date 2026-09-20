@@ -6,6 +6,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, 'public')));
 
+const CACHE_TTL_MS = 4 * 60 * 60 * 1000;
+const scheduleCache = new Map();
+
 function parseTime(str) {
   const match = str.trim().match(/^(\d{1,2}):(\d{2})\s*([ap])/i);
   if (!match) return null;
@@ -174,6 +177,11 @@ app.get('/api/schedule', async (req, res) => {
   if (!/^[A-Z]{1,2}\d{1,4}(-[A-Z0-9]+)?$/.test(facilityCode)) {
     return res.status(400).json({ error: 'Invalid facility code' });
   }
+  const cached = scheduleCache.get(facilityCode);
+  if (cached && (Date.now() - cached.fetchedAt) < CACHE_TTL_MS) {
+    return res.json(cached.data);
+  }
+
   const scheduleUrl = `https://www.nycgovparks.org/facilities/recreationcenters/${facilityCode}/schedule`;
   try {
     let html = '';
@@ -191,9 +199,13 @@ app.get('/api/schedule', async (req, res) => {
       throw new Error('NYC Parks returned empty response');
     }
     const schedule = parseScheduleHtml(html);
+    scheduleCache.set(facilityCode, { data: schedule, fetchedAt: Date.now() });
     res.json(schedule);
   } catch (err) {
     console.error('Failed to fetch schedule:', err.message);
+    if (cached) {
+      return res.json(cached.data);
+    }
     res.status(502).json({ error: 'Could not fetch schedule from NYC Parks' });
   }
 });
