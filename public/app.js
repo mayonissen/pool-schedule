@@ -1,17 +1,17 @@
 const POOLS = [
-  { borough: 'Bronx', code: 'X045', name: "St. Mary's Recreation Center" },
-  { borough: 'Brooklyn', code: 'B270', name: 'Brownsville Recreation Center' },
-  { borough: 'Brooklyn', code: 'B085', name: 'Metropolitan Recreation Center' },
-  { borough: 'Brooklyn', code: 'B250', name: 'Shirley Chisholm Recreation Center' },
-  { borough: 'Brooklyn', code: 'B245', name: "St. John's Recreation Center" },
-  { borough: 'Manhattan', code: 'M164', name: 'Asser Levy Recreation Center' },
-  { borough: 'Manhattan', code: 'M260', name: 'Chelsea Recreation Center' },
-  { borough: 'Manhattan', code: 'M130', name: 'Constance Baker Motley Recreation Center' },
-  { borough: 'Manhattan', code: 'M063', name: 'Gertrude Ederle Recreation Center' },
-  { borough: 'Manhattan', code: 'M131', name: 'Hansborough Recreation Center' },
-  { borough: 'Manhattan', code: 'M103', name: 'Tony Dapolito Recreation Center' },
-  { borough: 'Queens', code: 'Q099', name: 'Flushing Meadows Corona Park Aquatics Center & Ice Rink' },
-  { borough: 'Queens', code: 'Q448', name: 'Roy Wilkins Recreation Center' },
+  { borough: 'Bronx', code: 'X045', name: "St. Mary's Recreation Center", address: "450 Saint Ann's Avenue, Bronx, NY 10455" },
+  { borough: 'Brooklyn', code: 'B270', name: 'Brownsville Recreation Center', address: '1555 Linden Boulevard, Brooklyn, NY 11212' },
+  { borough: 'Brooklyn', code: 'B085', name: 'Metropolitan Recreation Center', address: '261 Bedford Avenue, Brooklyn, NY 11211' },
+  { borough: 'Brooklyn', code: 'B250', name: 'Shirley Chisholm Recreation Center', address: '3105 Farragut Place, Brooklyn, NY 11210' },
+  { borough: 'Brooklyn', code: 'B245', name: "St. John's Recreation Center", address: '1251 Prospect Place, Brooklyn, NY 11213' },
+  { borough: 'Manhattan', code: 'M164', name: 'Asser Levy Recreation Center', address: '392 Asser Levy Place, New York, NY 10010' },
+  { borough: 'Manhattan', code: 'M260', name: 'Chelsea Recreation Center', address: '430 West 25th Street, New York, NY 10001' },
+  { borough: 'Manhattan', code: 'M130', name: 'Constance Baker Motley Recreation Center', address: '348 East 54th Street, New York, NY 10022' },
+  { borough: 'Manhattan', code: 'M063', name: 'Gertrude Ederle Recreation Center', address: '232 West 60th Street, New York, NY 10023' },
+  { borough: 'Manhattan', code: 'M131', name: 'Hansborough Recreation Center', address: '35 West 134th Street, New York, NY 10037' },
+  { borough: 'Manhattan', code: 'M103', name: 'Tony Dapolito Recreation Center', address: '1 Clarkson Street, New York, NY 10014' },
+  { borough: 'Queens', code: 'Q099', name: 'Flushing Meadows Corona Park Aquatics Center & Ice Rink', address: '131-04 Meridian Rd, Flushing, NY 11368' },
+  { borough: 'Queens', code: 'Q448', name: 'Roy Wilkins Recreation Center', address: '177th Street & Baisley Boulevard, Jamaica, NY 11434' },
 ];
 
 const START_HOUR = 6;
@@ -434,6 +434,9 @@ function generateICS() {
     'END:VTIMEZONE',
   ];
 
+  const pool = POOLS.find(p => p.code === document.getElementById('pool-select').value);
+  const locationParts = [pool?.name, pool?.address].filter(Boolean);
+
   events.forEach((ev, i) => {
     if (!ev.fullDate) return;
     const [y, m, d] = ev.fullDate.split('-');
@@ -444,7 +447,9 @@ function generateICS() {
     lines.push(`DTSTART;TZID=America/New_York:${dtStart}`);
     lines.push(`DTEND;TZID=America/New_York:${dtEnd}`);
     lines.push(`SUMMARY:${ev.name}`);
-    if (ev.room) lines.push(`LOCATION:${ev.room}`);
+    const evLocation = ev.room ? [...locationParts, ev.room] : locationParts;
+    if (evLocation.length) lines.push(`LOCATION:${evLocation.join(', ')}`);
+    if (ev.details?.length) lines.push(`DESCRIPTION:${ev.details.join('\\n')}`);
     lines.push(`UID:pool-${ev.fullDate}-${i}@schedule`);
     lines.push('END:VEVENT');
   });
