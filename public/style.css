@@ -305,9 +305,11 @@ header .subtitle {
 
 .event.event-closed {
   border-color: #fff;
+  background: transparent;
   color: #6b7280;
   cursor: default;
   pointer-events: none;
+  z-index: 0;
 }
 
 .event.hover-dim {

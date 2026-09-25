@@ -584,7 +584,13 @@ async function generatePDF() {
         doc.setFillColor(255, 255, 255);
         doc.setDrawColor(closed ? 255 : GREEN_DARK[0], closed ? 255 : GREEN_DARK[1], closed ? 255 : GREEN_DARK[2]);
         doc.setLineWidth(closed ? 0.003 : 0.014);
+        if (closed) {
+          doc.setGState(new doc.GState({ opacity: 0, 'stroke-opacity': 1 }));
+        }
         doc.roundedRect(x, y, w, h, 0.02, 0.02, 'FD');
+        if (closed) {
+          doc.setGState(new doc.GState({ opacity: 1, 'stroke-opacity': 1 }));
+        }
 
         doc.setTextColor(closed ? CLOSED_TEXT[0] : GREEN_DARK[0], closed ? CLOSED_TEXT[1] : GREEN_DARK[1], closed ? CLOSED_TEXT[2] : GREEN_DARK[2]);
         doc.setFont('helvetica', 'bold');
